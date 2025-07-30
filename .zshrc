@@ -141,3 +141,6 @@ export FZF_DEFAULT_OPTS="--height 50% --layout=default --border"
 
 # fzf-git
 source "$DOTFILES_MODULES/fzf-git.sh/fzf-git.sh"
+
+# zoxide
+eval "$(zoxide init zsh)"
