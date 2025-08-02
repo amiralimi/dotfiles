@@ -144,3 +144,6 @@ source "$DOTFILES_MODULES/fzf-git.sh/fzf-git.sh"
 
 # zoxide
 eval "$(zoxide init zsh)"
+
+# adding this because zsh shows the env name and we don't want conda to show it aswell
+export CONDA_CHANGEPS1=false
