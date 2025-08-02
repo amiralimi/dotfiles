@@ -83,12 +83,6 @@ Zsh prompt is using the Agnoster theme.
 
 ## Config Structure
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-Folder	Description
-.config/	Config files managed with stow
-modules/	Custom plugin scripts (e.g., fzf-git)
-=======
 ```
 .dotfiles/
 ├── .config/
