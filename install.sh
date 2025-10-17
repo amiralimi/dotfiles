@@ -10,13 +10,13 @@ install_ohmyzsh() {
 }
 
 install_ohmyzsh_plugins() {
-    PLUGINS_DIR="${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/plugins"
-    if [[ ! -d "${PLUGINS_DIR}/zsh-autosuggestions" ]]; then
-        git clone https://github.com/zsh-users/zsh-autosuggestions "${PLUGINS_DIR}/zsh-autosuggestions"
+    local plugins_dir="${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/plugins"
+    if [[ ! -d "${plugins_dir}/zsh-autosuggestions" ]]; then
+        git clone https://github.com/zsh-users/zsh-autosuggestions "${plugins_dir}/zsh-autosuggestions"
     fi
 
-    if [[ ! -d "${PLUGINS_DIR}/zsh-syntax-highlighting" ]]; then
-        git clone https://github.com/zsh-users/zsh-syntax-highlighting "${PLUGINS_DIR}/zsh-syntax-highlighting"
+    if [[ ! -d "${plugins_dir}/zsh-syntax-highlighting" ]]; then
+        git clone https://github.com/zsh-users/zsh-syntax-highlighting "${plugins_dir}/zsh-syntax-highlighting"
     fi
 }
 
