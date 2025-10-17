@@ -9,6 +9,17 @@ install_ohmyzsh() {
     sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
 }
 
+install_ohmyzsh_plugins() {
+    PLUGINS_DIR="${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/plugins"
+    if [[ ! -d "${PLUGINS_DIR}/zsh-autosuggestions" ]]; then
+        git clone https://github.com/zsh-users/zsh-autosuggestions "${PLUGINS_DIR}/zsh-autosuggestions"
+    fi
+
+    if [[ ! -d "${PLUGINS_DIR}/zsh-syntax-highlighting" ]]; then
+        git clone https://github.com/zsh-users/zsh-syntax-highlighting "${PLUGINS_DIR}/zsh-syntax-highlighting"
+    fi
+}
+
 install_mac() {
     install_ohmyzsh
 
@@ -37,6 +48,7 @@ install_linux() {
 
     if [[ "$USE_SUDO" == "no" ]]; then
         install_ohmyzsh
+        install_ohmyzsh_plugins
     fi
 }
 
