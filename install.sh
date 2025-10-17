@@ -13,7 +13,7 @@ install_ohmyzsh_plugins() {
     local plugins_dir="${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/plugins"
     if [[ ! -d "${plugins_dir}/zsh-autosuggestions" ]]; then
         git clone https://github.com/zsh-users/zsh-autosuggestions "${plugins_dir}/zsh-autosuggestions"
-    else 
+    else
         echo "zsh-autosuggestions is already installed."
     fi
 
@@ -25,16 +25,20 @@ install_ohmyzsh_plugins() {
 }
 
 linux_arch_tag() {
-  case "$(uname -m)" in
-    x86_64|amd64)  echo "amd64" ;;
-    aarch64|arm64) echo "arm64" ;;
-    *) echo "Unsupported arch: $(uname -m)" >&2; return 1 ;;
-  esac
+    case "$(uname -m)" in
+    x86_64 | amd64) echo "amd64" ;;
+    aarch64 | arm64) echo "arm64" ;;
+    *)
+        echo "Unsupported arch: $(uname -m)" >&2
+        return 1
+        ;;
+    esac
 }
 
 github_latest_tag() {
     local repo="$1" tmp
-    tmp="$(mktemp)"; trap 'rm -f "$tmp"' RETURN
+    tmp="$(mktemp)"
+    trap 'rm -f "$tmp"' RETURN
     curl -fsSL "https://api.github.com/repos/${repo}/releases/latest" -o "$tmp"
     sed -nE 's/.*"tag_name"[[:space:]]*:[[:space:]]*"([^"]+)".*/\1/p' "$tmp" | head -n1
 }
@@ -47,7 +51,7 @@ install_release_binary() {
 
     local tag raw_tag_no_v os arch asset url tmp
     tag="$(github_latest_tag "$repo")"
-    raw_tag_no_v="${tag#v}"       # strip leading v if present
+    raw_tag_no_v="${tag#v}" # strip leading v if present
     os="linux"
     arch="$(linux_arch_tag)"
 
@@ -65,10 +69,13 @@ install_release_binary() {
 
     echo "Extracting ${asset} to ${TMP_DIR}"
     case "$asset" in
-        *.tar.gz|*.tgz) tar -xzf "${TMP_DIR}/${asset}" -C "${TMP_DIR}" ;;
-        *.tar.xz)       tar -xJf "${TMP_DIR}/${asset}" -C "${TMP_DIR}" ;;
-        *.zip)          unzip -q "${TMP_DIR}/${asset}" -d "${TMP_DIR}" ;;
-        *) echo "Unknown archive format: $asset" >&2; return 1 ;;
+    *.tar.gz | *.tgz) tar -xzf "${TMP_DIR}/${asset}" -C "${TMP_DIR}" ;;
+    *.tar.xz) tar -xJf "${TMP_DIR}/${asset}" -C "${TMP_DIR}" ;;
+    *.zip) unzip -q "${TMP_DIR}/${asset}" -d "${TMP_DIR}" ;;
+    *)
+        echo "Unknown archive format: $asset" >&2
+        return 1
+        ;;
     esac
 
     # If a specific path is provided, use it; otherwise try to find an executable matching dest_name
@@ -106,7 +113,6 @@ install_mac() {
     stow -t ~/.config .config
 }
 
-
 install_linux() {
     echo "Installing on Linux..."
     local USE_SUDO="$1"
@@ -138,14 +144,17 @@ install_linux() {
 }
 
 # get input args for --sudo or --no-sudo
-USE_SUDO="auto"  # auto | yes | no
+USE_SUDO="auto" # auto | yes | no
 
 for arg in "$@"; do
-  case "$arg" in
+    case "$arg" in
     --sudo) USE_SUDO="yes" ;;
     --no-sudo) USE_SUDO="no" ;;
-    *) echo "Unknown option: $arg" >&2; exit 1 ;;
-  esac
+    *)
+        echo "Unknown option: $arg" >&2
+        exit 1
+        ;;
+    esac
 done
 
 if [[ "$OSTYPE" == "linux-gnu"* ]]; then
