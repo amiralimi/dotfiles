@@ -13,11 +13,80 @@ install_ohmyzsh_plugins() {
     local plugins_dir="${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/plugins"
     if [[ ! -d "${plugins_dir}/zsh-autosuggestions" ]]; then
         git clone https://github.com/zsh-users/zsh-autosuggestions "${plugins_dir}/zsh-autosuggestions"
+    else 
+        echo "zsh-autosuggestions is already installed."
     fi
 
     if [[ ! -d "${plugins_dir}/zsh-syntax-highlighting" ]]; then
         git clone https://github.com/zsh-users/zsh-syntax-highlighting "${plugins_dir}/zsh-syntax-highlighting"
+    else
+        echo "zsh-syntax-highlighting is already installed."
     fi
+}
+
+linux_arch_tag() {
+  case "$(uname -m)" in
+    x86_64|amd64)  echo "amd64" ;;
+    aarch64|arm64) echo "arm64" ;;
+    *) echo "Unsupported arch: $(uname -m)" >&2; return 1 ;;
+  esac
+}
+
+github_latest_tag() {
+    local repo="$1" tmp
+    tmp="$(mktemp)"; trap 'rm -f "$tmp"' RETURN
+    curl -fsSL "https://api.github.com/repos/${repo}/releases/latest" -o "$tmp"
+    sed -nE 's/.*"tag_name"[[:space:]]*:[[:space:]]*"([^"]+)".*/\1/p' "$tmp" | head -n1
+}
+
+install_release_binary() {
+    local repo="$1"
+    local asset_tpl="$2"
+    local bin_in_tar="$3"
+    local dest_name="$4"
+
+    local tag raw_tag_no_v os arch asset url tmp
+    tag="$(github_latest_tag "$repo")"
+    raw_tag_no_v="${tag#v}"       # strip leading v if present
+    os="linux"
+    arch="$(linux_arch_tag)"
+
+    # Render template
+    asset="${asset_tpl}"
+    asset="${asset//\{tag\}/$tag}"
+    asset="${asset//\{tag_no_v\}/$raw_tag_no_v}"
+    asset="${asset//\{os\}/$os}"
+    asset="${asset//\{arch\}/$arch}"
+
+    url="https://github.com/${repo}/releases/download/${tag}/${asset}"
+
+    echo "Downloading ${url}"
+    curl -fsSL "$url" -o "${TMP_DIR}/${asset}"
+
+    echo "Extracting ${asset} to ${TMP_DIR}"
+    case "$asset" in
+        *.tar.gz|*.tgz) tar -xzf "${TMP_DIR}/${asset}" -C "${TMP_DIR}" ;;
+        *.tar.xz)       tar -xJf "${TMP_DIR}/${asset}" -C "${TMP_DIR}" ;;
+        *.zip)          unzip -q "${TMP_DIR}/${asset}" -d "${TMP_DIR}" ;;
+        *) echo "Unknown archive format: $asset" >&2; return 1 ;;
+    esac
+
+    # If a specific path is provided, use it; otherwise try to find an executable matching dest_name
+    local src="${TMP_DIR}/$bin_in_tar"
+    if [[ -z "$bin_in_tar" || ! -f "$src" ]]; then
+        # Try to discover the binary automatically
+        src="$(find "${TMP_DIR}" -type f -name "$dest_name" -perm -u+x | head -n1 || true)"
+    fi
+
+    if [[ -z "${src:-}" || ! -f "$src" ]]; then
+        echo "Failed to locate binary '$bin_in_tar' (or '$dest_name') in the archive." >&2
+        return 1
+    fi
+
+    echo "Installing to ${PREFIX}/${dest_name}"
+    install -m 0755 "$src" "${PREFIX}/${dest_name}"
+    echo "Installed: ${PREFIX}/${dest_name}"
+
 }
 
 install_mac() {
@@ -49,6 +118,22 @@ install_linux() {
     if [[ "$USE_SUDO" == "no" ]]; then
         install_ohmyzsh
         install_ohmyzsh_plugins
+
+        TMP_DIR="$(mktemp -d)"
+        trap 'rm -rf "$TMP_DIR"' EXIT
+
+        PREFIX="$HOME/.local/bin"
+        mkdir -p "$PREFIX"
+
+        if [[ ! -f "$PREFIX/fzf" ]]; then
+            install_release_binary \
+                "junegunn/fzf" \
+                "fzf-{tag_no_v}-linux_{arch}.tar.gz" \
+                "fzf" \
+                "fzf"
+        else
+            echo "fzf is already installed at $PREFIX/fzf"
+        fi
     fi
 }
 
