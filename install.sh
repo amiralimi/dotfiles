@@ -35,6 +35,28 @@ linux_arch_tag() {
     esac
 }
 
+gnu_arch_tag() {
+    case "$(uname -m)" in
+    x86_64 | amd64) echo "x86_64" ;;
+    aarch64 | arm64) echo "aarch64" ;;
+    *)
+        echo "Unsupported arch: $(uname -m)" >&2
+        return 1
+        ;;
+    esac
+}
+
+linux_release_flavor() {
+    case "$(uname -m)" in
+        x86_64|amd64)  echo "linux64-static" ;;
+        aarch64|arm64) echo "linux-arm64" ;;
+        *) 
+            echo "Unsupported arch: $(uname -m)" >&2
+            return 1
+            ;;
+    esac
+}
+
 github_latest_tag() {
     local repo="$1" tmp
     tmp="$(mktemp)"
@@ -49,11 +71,13 @@ install_release_binary() {
     local bin_in_tar="$3"
     local dest_name="$4"
 
-    local tag raw_tag_no_v os arch asset url tmp
+    local tag raw_tag_no_v os arch gnu_arch asset url tmp
     tag="$(github_latest_tag "$repo")"
     raw_tag_no_v="${tag#v}" # strip leading v if present
     os="linux"
     arch="$(linux_arch_tag)"
+    gnu_arch="$(gnu_arch_tag)"
+    release_flavor="$(linux_release_flavor)"
 
     # Render template
     asset="${asset_tpl}"
@@ -61,6 +85,8 @@ install_release_binary() {
     asset="${asset//\{tag_no_v\}/$raw_tag_no_v}"
     asset="${asset//\{os\}/$os}"
     asset="${asset//\{arch\}/$arch}"
+    asset="${asset//\{gnu_arch\}/$gnu_arch}"
+    asset="${asset//\{release_flavor\}/$release_flavor}"
 
     url="https://github.com/${repo}/releases/download/${tag}/${asset}"
 
@@ -93,7 +119,12 @@ install_release_binary() {
     echo "Installing to ${PREFIX}/${dest_name}"
     install -m 0755 "$src" "${PREFIX}/${dest_name}"
     echo "Installed: ${PREFIX}/${dest_name}"
+}
 
+cp_config() {
+    local src="$1" dst="$2"
+    mkdir -p "$(dirname "$dst")"
+    cp -r "$src" "$dst"
 }
 
 install_mac() {
@@ -140,11 +171,70 @@ install_linux() {
         else
             echo "fzf is already installed at $PREFIX/fzf"
         fi
-    fi
+
+        if [[ ! -f "$PREFIX/fd" ]]; then
+            install_release_binary \
+                "sharkdp/fd" \
+                "fd-v{tag_no_v}-{gnu_arch}-unknown-linux-gnu.tar.gz" \
+                "fd" \
+                "fd"
+        else
+            echo "fd is already installed at $PREFIX/fd"
+        fi
+        if [[ ! -f "$PREFIX/bat" ]]; then
+            install_release_binary \
+                "sharkdp/bat" \
+                "bat-v{tag_no_v}-{gnu_arch}-unknown-linux-gnu.tar.gz" \
+                "bat" \
+                "bat"
+        else
+            echo "bat is already installed at $PREFIX/bat"
+        fi
+
+        git submodule update --init --recursive
+
+        if [[ ! -f "$PREFIX/zoxide" ]]; then
+            install_release_binary \
+                "ajeetdsouza/zoxide" \
+                "zoxide-{tag_no_v}-{gnu_arch}-unknown-linux-musl.tar.gz" \
+                "zoxide" \
+                "zoxide"
+        else
+            echo "zoxide is already installed at $PREFIX/zoxide"
+        fi
+
+        if [[ ! -f "$PREFIX/micro" ]]; then
+            install_release_binary \
+                "zyedidia/micro" \
+                "micro-{tag_no_v}-{release_flavor}.tar.gz" \
+                "micro" \
+                "micro"
+        else
+            echo "micro is already installed at $PREFIX/micro"
+        fi
+
+        if [[ ! -f "$PREFIX/yazi" ]]; then
+            install_release_binary \
+                "sxyazi/yazi" \
+                "yazi-{gnu_arch}-unknown-linux-musl.zip" \
+                "yazi" \
+                "yazi"
+        else
+            echo "yazi is already installed at $PREFIX/yazi"
+        fi
+   fi
+
+    echo "Linux installation complete."
+
+    mkdir -p "$HOME/.config"
+
+    cp_config "$DOTFILES_HOME/.config/yazi" "$HOME/.config/yazi"
+
 }
 
 # get input args for --sudo or --no-sudo
 USE_SUDO="auto" # auto | yes | no
+DOTFILES_HOME="$HOME/.dotfiles"
 
 for arg in "$@"; do
     case "$arg" in
