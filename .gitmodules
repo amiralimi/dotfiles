@@ -1,3 +1,6 @@
 [submodule "modules/fzf-git.sh"]
 	path = modules/fzf-git.sh
 	url = https://github.com/junegunn/fzf-git.sh.git
+[submodule ".config/nvim"]
+	path = .config/nvim
+	url = git@github.com:amiralimi/kickstart.nvim.git
