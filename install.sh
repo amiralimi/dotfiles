@@ -140,6 +140,7 @@ install_mac() {
     brew install --cask font-iosevka-nerd-font
     brew install yazi ffmpeg sevenzip jq poppler fd ripgrep fzf zoxide resvg imagemagick font-symbols-only-nerd-font
     brew install stow
+    brew install ripgrep
 
     stow -t ~/.config .config
 }
