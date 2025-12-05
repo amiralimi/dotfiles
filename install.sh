@@ -121,6 +121,23 @@ install_release_binary() {
     echo "Installed: ${PREFIX}/${dest_name}"
 }
 
+install_nvim() {
+    INSTALL_DIR="$HOME/.local/nvim-linux-x86_64"
+    NVIM_TAG="$(github_latest_tag "neovim/neovim")"
+    NVIM_ASSET="nvim-linux-x86_64.tar.gz"
+    NVIM_URL="https://github.com/neovim/neovim/releases/download/${NVIM_TAG}/${NVIM_ASSET}"
+
+    echo "Downloading ${NVIM_URL}..."
+    curl -fsSL "$NVIM_URL" -o "${TMP_DIR}/${NVIM_ASSET}"
+
+    echo "Extracting ${NVIM_ASSET} to ${TMP_DIR}"
+    tar -xzf "${TMP_DIR}/${NVIM_ASSET}" -C "${TMP_DIR}"
+
+    mv "${TMP_DIR}/nvim-linux-x86_64" "$HOME/.local/"
+
+    ln -sf "$INSTALL_DIR/bin/nvim" "$PREFIX/nvim"
+}
+
 cp_config() {
     local src="$1" dst="$2"
     mkdir -p "$(dirname "$dst")"
@@ -137,6 +154,7 @@ install_mac() {
 
     brew install zoxide
     brew install micro
+    brew install neovim
     brew install --cask font-iosevka-nerd-font
     brew install yazi ffmpeg sevenzip jq poppler fd ripgrep fzf zoxide resvg imagemagick font-symbols-only-nerd-font
     brew install stow
@@ -214,6 +232,12 @@ install_linux() {
             echo "micro is already installed at $PREFIX/micro"
         fi
 
+        if [[ ! -f "$PREFIX/nvim" ]]; then 
+            install_nvim
+        else
+            echo "nvim is already installed at $PREFIX/nvim"
+        fi
+
         if [[ ! -f "$PREFIX/yazi" ]]; then
             install_release_binary \
                 "sxyazi/yazi" \
@@ -230,6 +254,8 @@ install_linux() {
     mkdir -p "$HOME/.config"
 
     cp_config "$DOTFILES_HOME/.config/yazi" "$HOME/.config/yazi"
+
+    cp_config "$DOTFILES_HOME/.config/nvim" "$HOME/.config/nvim"
 
 }
 
