@@ -1,3 +1,5 @@
 theme = Espresso
 font-size = 13
 font-family = Iosevka Nerd Font
+working-directory = home
+window-inherit-working-directory = false
